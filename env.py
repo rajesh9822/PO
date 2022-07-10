@@ -75,17 +75,18 @@ class POEnv:
         self.state = [self.wma_lb_stock, self.wma_hb_stock, self.no_of_lb_stock, self.no_of_hb_stock, self.total_portfolio_amt, self.total_cash]
         return self.state
 
-    def get_next_state(self, state, action, data):
+    def get_next_state(self, state, action, df):
         #Calculate next state, reward and total ride time for a given
         #    state and action
         self.done = False
-        window = 7
-        for i in range(len(data)):
-            self.wma_lb_stock = self.wma_lb_stock + data.Close_lb_stock[i] * i
-            self.wma_hb_stock = self.wma_hb_stock + data.Close_hb_stock[i] * i
-            print("data.Close_lb_stock[i] ", data.Close_lb_stock[i],i)
+        for i in range(len(df)):
+            self.wma_lb_stock = self.wma_lb_stock + df.Close_lb_stock[i] * i
+            self.wma_hb_stock = self.wma_hb_stock + df.Close_hb_stock[i] * i
+            print("data.Close_lb_stock[i] ", df.Close_lb_stock[i],i)
+            total_period = i + 1
+        self.wma_lb_stock = self.wma_lb_stock/total_period
+        self.wma_hb_stock = self.wma_hb_stock/total_period
             # we will start with 50-50 allocation
-        window = window + 7
         print("self.wma_lb_stock ", self.wma_lb_stock, i)
         print("self.wma_hb_stock ", self.wma_hb_stock, i)
         self.total_portfolio_amt_cur = state[:4]
@@ -105,14 +106,14 @@ class POEnv:
 
                     #calculate cost of buy and sale based on the action
 
-                    cost_of_lb_stock_to_sell = no_of_lb_stock_to_sell * data.Close_lb_stock[i] + 0.01 * no_of_lb_stock_to_sell
-                    cost_of_hb_stock_to_buy  = no_of_hb_stock_to_buy * data.Close_hb_stock[i] + 0.01 * no_of_hb_stock_to_buy
+                    cost_of_lb_stock_to_sell = no_of_lb_stock_to_sell * df.Close_lb_stock[i] + 0.01 * no_of_lb_stock_to_sell
+                    cost_of_hb_stock_to_buy  = no_of_hb_stock_to_buy * df.Close_hb_stock[i] + 0.01 * no_of_hb_stock_to_buy
 
                     if abs(cost_of_lb_stock_to_sell) - abs(cost_of_hb_stock_to_buy) > 0:
 
                         self.total_cash = self.total_cash + (abs(cost_of_lb_stock_to_sell) - abs(cost_of_hb_stock_to_buy))
                     else:
-                        self.total_cash = self.total_cash + (abs(cost_of_lb_stock_to_sell) - abs(cost_of_hb_stock_to_buy))
+                        self.total_cash = self.total_cash - (abs(cost_of_lb_stock_to_sell) - abs(cost_of_hb_stock_to_buy))
 
         else:
             # sell lb and buy corresponding hb stock
@@ -127,16 +128,16 @@ class POEnv:
 
                     # calculate cost of buy and sale based on the action
 
-                    cost_of_lb_stock_to_buy = no_of_lb_stock_to_buy * data.Close_lb_stock[i] + .01 * no_of_lb_stock_to_buy
-                    cost_of_hb_stock_to_sell = no_of_hb_stock_to_sell * data.Close_hb_stock[i] + .01 * no_of_hb_stock_to_sell
+                    cost_of_lb_stock_to_buy = no_of_lb_stock_to_buy * df.Close_lb_stock[i] + .01 * no_of_lb_stock_to_buy
+                    cost_of_hb_stock_to_sell = no_of_hb_stock_to_sell * df.Close_hb_stock[i] + .01 * no_of_hb_stock_to_sell
 
                     if abs(cost_of_hb_stock_to_sell) - abs(cost_of_lb_stock_to_buy) > 0:
                         self.total_cash = self.total_cash + (abs(cost_of_hb_stock_to_sell) - abs(cost_of_lb_stock_to_buy))
                     else:
                         self.total_cash = self.total_cash - (abs(cost_of_hb_stock_to_sell) - abs(cost_of_lb_stock_to_buy))
 
-        self.total_portfolio_amt_nxt = self.no_of_lb_stock * data.Close_lb_stock[i] + self.no_of_hb_stock * data.Close_hb_stock[i]
-        print("data.Close_lb_stock[i]",data.Close_lb_stock[i])
+        self.total_portfolio_amt_nxt = self.no_of_lb_stock * df.Close_lb_stock[i] + self.no_of_hb_stock * df.Close_hb_stock[i]
+        print("data.Close_lb_stock[i]", df.Close_lb_stock[i])
         print("self.total_portfolio_amt_nxt", self.total_portfolio_amt_nxt)
         print("self.total_cash",self.total_cash)
         self.next_state = [self.wma_lb_stock, self.wma_hb_stock, self.no_of_lb_stock, self.no_of_hb_stock,

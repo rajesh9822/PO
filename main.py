@@ -73,19 +73,24 @@ def main():
 
             state = np.reshape(state, [1, state_size])
             print("current_state :", state)
-           # while not done:
+            #use 7 days window for histrical prices
             window = 7
-            for i in range(len(data)):
-                # get action for the current state and go one step in environment
+            i = 0
+            while not done:
+            # get action for the current state and go one step in environment
                 action = agent.get_action(state)
                 print("action : ", action)
                 next_state, reward, done = env.get_next_state(state, action, data[i:window])
                 i = window
                 window = window + 7
+                print("i" , i,"window", window)
+                if window > len(data):
+                   done = True
+"""
+            next_state = np.reshape(next_state, [1, state_size])
 
-"""         next_state = np.reshape(next_state, [1, state_size])
-                # if an action make the episode end, then gives penalty of -100
-               reward = reward if not done or score == 499 else -100
+            #reward function 
+            reward = reward if not done or score == 499 else -100
 
                 # save the sample <s, a, r, s'> to the replay memory
                 agent.append_sample(state, action, reward, next_state, done)
