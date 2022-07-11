@@ -65,7 +65,7 @@ def save_model_graph(self):
 
 def main():
     if __name__ == "__main__":
-        EPISODES = 2
+        EPISODES = 1000
 #get the data
         data = load_data()
         data = transform_data(data)
@@ -77,8 +77,8 @@ def main():
         state_size = len(env.state_space)
         #action_size = env.action_space.n
         action_size = len(env.action_space)
-        print("State Size : " , state_size)
-        print("Action Size : ", action_size)
+    #    print("State Size : " , state_size)
+    #    print("Action Size : ", action_size)
         agent = DQNAgent(state_size, action_size)
 
         rewards, episodes = [], []
@@ -100,7 +100,7 @@ def main():
                 action = agent.get_action(state)
                 print("action : ", action)
                 print("start step -------")
-                print("current index", i, "window", window, "max len ", max_len)
+        #        print("current index", i, "window", window, "max len ", max_len)
                 next_state , reward = env.get_next_state(state, action, data[i:window])
                 print("end step -------")
                 i = window

@@ -82,15 +82,15 @@ class POEnv:
         for i in range(len(df)):
             self.wma_lb_stock = self.wma_lb_stock + df.Close_lb_stock[i] * i
             self.wma_hb_stock = self.wma_hb_stock + df.Close_hb_stock[i] * i
-            print("data.Close_lb_stock[i] ", df.Close_lb_stock[i],i)
+        #    print("data.Close_lb_stock[i] ", df.Close_lb_stock[i],i)
             total_period = i + 1
-        print("total_period ", total_period)
+        #print("total_period ", total_period)
         self.wma_lb_stock = self.wma_lb_stock/total_period
         self.wma_hb_stock = self.wma_hb_stock/total_period
             # we will start with 50-50 allocation
-        print("self.wma_lb_stock ", self.wma_lb_stock, i)
-        print("self.wma_hb_stock ", self.wma_hb_stock, i)
-        print("Current State ", state)
+        #print("self.wma_lb_stock ", self.wma_lb_stock, i)
+        #print("self.wma_hb_stock ", self.wma_hb_stock, i)
+        #print("Current State ", state)
         self.total_portfolio_amt_cur = state[0,4]
         print("total_portfolio_amt_cur", self.total_portfolio_amt_cur)
         buy_sel_per = self.action_space[action]
@@ -140,8 +140,8 @@ class POEnv:
                         self.total_cash = self.total_cash - (abs(cost_of_hb_stock_to_sell) - abs(cost_of_lb_stock_to_buy))
 
         self.total_portfolio_amt_nxt = self.no_of_lb_stock * df.Close_lb_stock[i] + self.no_of_hb_stock * df.Close_hb_stock[i]
-        print("data.Close_lb_stock[i]", df.Close_lb_stock[i])
-        print("data.Close_hb_stock[i]", df.Close_hb_stock[i])
+        #print("data.Close_lb_stock[i]", df.Close_lb_stock[i])
+        #print("data.Close_hb_stock[i]", df.Close_hb_stock[i])
         print("self.total_portfolio_amt_nxt", self.total_portfolio_amt_nxt)
         print("self.total_cash", self.total_cash)
         self.next_state = [self.wma_lb_stock, self.wma_hb_stock, self.no_of_lb_stock, self.no_of_hb_stock,
