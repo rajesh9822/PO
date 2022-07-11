@@ -59,19 +59,20 @@ def main():
         state_size = len(env.state_space)
         #action_size = env.action_space.n
         action_size = len(env.action_space)
-        print(state_size)
-        print(action_size)
+        print("State Size : " , state_size)
+        print("Action Size : ", action_size)
         agent = DQNAgent(state_size, action_size)
 
         reward, episodes = [], []
-
+        max_len = len(data)
         for e in range(EPISODES):
             done = False
             reward = 0
-            print(len(data))
+
             state = env.set_init_state(data = data.head(1))
 
             state = np.reshape(state, [1, state_size])
+            print("start episode -------")
             print("current_state :", state)
             #use 7 days window for histrical prices
             window = 7
@@ -80,48 +81,41 @@ def main():
             # get action for the current state and go one step in environment
                 action = agent.get_action(state)
                 print("action : ", action)
-                next_state, reward, done = env.get_next_state(state, action, data[i:window])
+                print("start step -------")
+                print("current index", i, "window", window, "max len ", max_len)
+                next_state , reward = env.get_next_state(state, action, data[i:window])
+                print("end step -------")
                 i = window
                 window = window + 7
-                print("i" , i,"window", window)
-                if window > len(data):
-                   done = True
-"""
-            next_state = np.reshape(next_state, [1, state_size])
+                next_state = np.reshape(next_state, [1, state_size])
 
-            #reward function 
-            reward = reward if not done or score == 499 else -100
-
-                # save the sample <s, a, r, s'> to the replay memory
+                  # save the sample <s, a, r, s'> to the replay memory
                 agent.append_sample(state, action, reward, next_state, done)
 
-                # every time step do the training
+            # every time step do the training
                 agent.train_model()
-
-                score += reward
                 state = next_state
-
+            # stop training
+                if window > max_len:
+                    done = True
+                    print("end episode -------")
                 if done:
-                    # every episode update the target model to be same with model
+                # every episode update the target model to be same with model
                     agent.update_target_model()
-
-                    # adding +100 to score because initially we subtracted 100 for not completing the episode
-                    score = score if score == 500 else score + 100
-                    scores.append(score)
+                    print(reward.dtype)
+                # adding +100K to reward because initially we subtracted 100K as a penalty
+"""                 
+                    reward.append(reward + env.penalty)
                     episodes.append(e)
-                    pylab.plot(episodes, scores, 'b')
+                    pylab.plot(episodes, reward, 'b')
                     pylab.savefig("./save_graph/PO_dqn.png")
-                    print("episode:", e, "  score:", score, "  memory length:",
-                          len(agent.memory), "  epsilon:", agent.epsilon)
+                    print("episode:", e, "  profit:", reward, "  memory length:",
+                      len(agent.memory), "  epsilon:", agent.epsilon)
 
-                    # if the mean of scores of last 30 episode is bigger than 490
-                    # stop training
-                    if np.mean(scores[-min(30, len(scores)):]) > 490:
-                        agent.model.save_weights("./save_model/PO_dqn.h5")
-                        sys.exit()
 
-            # save the model
-            if e % 50 == 0:
-                agent.model.save_weights("./save_model/PO_dqn.h5")
+
+        # save the model
+        if e % 50 == 0:
+            agent.model.save_weights("./save_model/PO_dqn.h5")
 """
 main()
