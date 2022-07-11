@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 from agent import DQNAgent
 from env import POEnv
-
+import os
 
 def load_data():
     df = pd.read_csv("data.csv")
@@ -44,10 +44,28 @@ Wn = The period 2days of period stock history for both the HB and LB stock
 # take 1 stock portfolio LB : CLX, HB: TSLA
 """
 
-EPISODES = 1
+def make_dir():
+
+    directory_model = 'save_model'
+    directory_graph = 'save_graph'
+
+    # directory = 'save_graph'
+    if not os.path.exists(directory_model):
+        os.makedirs(directory_model)
+
+    if not os.path.exists(directory_graph):
+        os.makedirs(directory_graph)
+
+def save_model_graph(self):
+        # serialize model to JSON
+        model_json = self.model.to_json()
+        with open("./save_model/PO_dqn_model.json", "w") as json_file:
+            json_file.write(model_json)
+
+
 def main():
     if __name__ == "__main__":
-
+        EPISODES = 2
 #get the data
         data = load_data()
         data = transform_data(data)
@@ -63,7 +81,7 @@ def main():
         print("Action Size : ", action_size)
         agent = DQNAgent(state_size, action_size)
 
-        reward, episodes = [], []
+        rewards, episodes = [], []
         max_len = len(data)
         for e in range(EPISODES):
             done = False
@@ -72,7 +90,7 @@ def main():
             state = env.set_init_state(data = data.head(1))
 
             state = np.reshape(state, [1, state_size])
-            print("start episode -------")
+            print("start episode -------", e)
             print("current_state :", state)
             #use 7 days window for histrical prices
             window = 7
@@ -98,24 +116,30 @@ def main():
             # stop training
                 if window > max_len:
                     done = True
-                    print("end episode -------")
+                    print("end episode @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", e)
                 if done:
                 # every episode update the target model to be same with model
+                    print("update target model")
                     agent.update_target_model()
-                    print(reward.dtype)
+
                 # adding +100K to reward because initially we subtracted 100K as a penalty
-"""                 
-                    reward.append(reward + env.penalty)
+
+                    rewards.append(reward + env.penalty)
                     episodes.append(e)
-                    pylab.plot(episodes, reward, 'b')
+                    print("plot graph")
+                    pylab.plot(episodes, rewards, 'b')
+                    print("save graph")
                     pylab.savefig("./save_graph/PO_dqn.png")
                     print("episode:", e, "  profit:", reward, "  memory length:",
                       len(agent.memory), "  epsilon:", agent.epsilon)
+                    print("wrapup episode")
 
 
 
         # save the model
         if e % 50 == 0:
+            print("save model")
             agent.model.save_weights("./save_model/PO_dqn.h5")
-"""
+#""
+make_dir()
 main()
