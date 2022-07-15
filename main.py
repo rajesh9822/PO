@@ -17,6 +17,8 @@ import pandas as pd
 from agent import DQNAgent
 from env import POEnv
 import os
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def load_data():
     df = pd.read_csv("data.csv")
@@ -26,6 +28,27 @@ def load_data():
     print(df.value_counts())
     return df
 
+def do_eda(df):
+    df = df[['Date','Name', 'Close']]
+
+    low_beta_stock = ['SJM', 'MRK', 'EXR', 'WMT', 'LLY', 'CLX', 'DLR', 'KR'] #,'REGN'] 'PSA',,
+    high_beta_stock = ['MS', 'NVDIA', 'C',  'GM', 'MET',  'COF', 'SLB','BAC'] #,] #,'TSLA'] BA,
+
+    # low beta
+    lbs = df[df['Name'].isin(low_beta_stock)]
+    # high beta
+    hbs = df[df['Name'].isin(high_beta_stock)]
+
+    lbs_pivot = lbs.pivot("Date", "Name", "Close" )
+    hbs_pivot = hbs.pivot("Date", "Name", "Close")
+    #plt.interactive(False)
+    lbs.head()
+    hbs.head()
+    sns.lineplot(data=lbs_pivot, dashes=False, ).set(title='Low Beta Stock').savefig("./save_graph/LowBetaStocks.png")
+    sns.lineplot(data=hbs_pivot, dashes=False, ).set(title='High Beta Stock').savefig("./save_graph/HighBetaStocks.png")
+    #snsfig2 = sns.lineplot(data=hbs_pivot, dashes=False).set(title='High Beta Stock')
+    #snsfig2.savefig("./save_graph/HighBetaStocks.png")
+
 def transform_data(data):
     df_lb = data.loc[data['Name'] == 'CLX']
     df_hb = data.loc[data['Name'] == 'TSLA']
@@ -33,17 +56,14 @@ def transform_data(data):
     df = df_lb.set_index('Date').join(df_hb.set_index('Date'), lsuffix='_lb_stock', rsuffix='_hb_stock')
     return df
 
-
 """
 WMA = ( P1 * W1 ) + (P2 *W2) + (P3 *W3) + (Pn * Wn) / (Wn + Wn-1 +…)
 Where:
 P1 = current price
 P2 = Price one period ago
 Wn = The period 2days of period stock history for both the HB and LB stock
-
 # take 1 stock portfolio LB : CLX, HB: TSLA
 """
-
 def make_dir():
 
     directory_model = 'save_model'
@@ -63,16 +83,14 @@ def save_model_graph(self):
             json_file.write(model_json)
 
 
-def main():
+def main(data):
     if __name__ == "__main__":
         EPISODES = 1000
-#get the data
-        data = load_data()
-        data = transform_data(data)
+
 #get the env
 
         env = POEnv()
-        # get size of state and action from environment
+    # get size of state and action from environment
         #state_size = env.state_space.shape[0]
         state_size = len(env.state_space)
         #action_size = env.action_space.n
@@ -80,34 +98,32 @@ def main():
     #    print("State Size : " , state_size)
     #    print("Action Size : ", action_size)
         agent = DQNAgent(state_size, action_size)
-
         rewards, episodes = [], []
         max_len = len(data)
         for e in range(EPISODES):
             done = False
             reward = 0
-
             state = env.set_init_state(data = data.head(1))
 
             state = np.reshape(state, [1, state_size])
-            print("start episode -------", e)
-            print("current_state :", state)
-            #use 7 days window for histrical prices
+        #    print("start episode -------", e)
+            #           print("current_state :", state)
+            # use 7 days window for histrical prices
             window = 7
             i = 0
             while not done:
             # get action for the current state and go one step in environment
                 action = agent.get_action(state)
-                print("action : ", action)
-                print("start step -------")
-        #        print("current index", i, "window", window, "max len ", max_len)
-                next_state , reward = env.get_next_state(state, action, data[i:window])
-                print("end step -------")
+            #               print("action : ", action)
+            #               print("start step -------")
+            #        print("current index", i, "window", window, "max len ", max_len)
+                next_state, reward, done = env.get_next_state(state, action, data[i:window])
+            #               print("end step -------")
                 i = window
                 window = window + 7
                 next_state = np.reshape(next_state, [1, state_size])
 
-                  # save the sample <s, a, r, s'> to the replay memory
+                # save the sample <s, a, r, s'> to the replay memory
                 agent.append_sample(state, action, reward, next_state, done)
 
             # every time step do the training
@@ -115,31 +131,33 @@ def main():
                 state = next_state
             # stop training
                 if window > max_len:
+                    print(data[max_len:max_len])
                     done = True
-                    print("end episode @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", e)
+                #    print("end episode @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", e)
                 if done:
-                # every episode update the target model to be same with model
-                    print("update target model")
+            #  every episode update the target model to be same with model
+            #  print("update target model")
                     agent.update_target_model()
 
                 # adding +100K to reward because initially we subtracted 100K as a penalty
 
                     rewards.append(reward + env.penalty)
                     episodes.append(e)
-                    print("plot graph")
+#                   print("plot graph")
                     pylab.plot(episodes, rewards, 'b')
-                    print("save graph")
+#                   print("save graph")
                     pylab.savefig("./save_graph/PO_dqn.png")
-                    print("episode:", e, "  profit:", reward, "  memory length:",
-                      len(agent.memory), "  epsilon:", agent.epsilon)
-                    print("wrapup episode")
-
-
-
+                    print("episode:", e, "  profit:", reward, " cash:", env.total_cash, "  memory length:",
+                    len(agent.memory), "  epsilon:", agent.epsilon)
+ #                  print("wrapup episode")
         # save the model
         if e % 50 == 0:
-            print("save model")
+        # print("save model")
             agent.model.save_weights("./save_model/PO_dqn.h5")
-#""
+#Execute the program
 make_dir()
-main()
+#get the data
+data = load_data()
+data = transform_data(data)
+#do_eda(d)
+main(data)
