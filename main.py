@@ -50,10 +50,11 @@ def do_eda(df):
     #snsfig2.savefig("./save_graph/HighBetaStocks.png")
 
 def transform_data(data):
-    df_lb = data.loc[data['Name'] == 'CLX']
-    df_hb = data.loc[data['Name'] == 'TSLA']
+    df_lb = data.loc[data['Name'] == 'SJM']
+    df_hb = data.loc[data['Name'] == 'MS']
 
     df = df_lb.set_index('Date').join(df_hb.set_index('Date'), lsuffix='_lb_stock', rsuffix='_hb_stock')
+    print(df.columns)
     return df
 
 """
@@ -98,18 +99,20 @@ def main(data):
     #    print("State Size : " , state_size)
     #    print("Action Size : ", action_size)
         agent = DQNAgent(state_size, action_size)
-        rewards, episodes = [], []
+        rewards, episodes , do_nothing_rewards= [], [], []
         max_len = len(data)
         for e in range(EPISODES):
             done = False
             reward = 0
             state = env.set_init_state(data = data.head(1))
-
+            state_dono  = state
             state = np.reshape(state, [1, state_size])
+
+
         #    print("start episode -------", e)
             #           print("current_state :", state)
             # use 7 days window for histrical prices
-            window = 7
+            window = 2
             i = 0
             while not done:
             # get action for the current state and go one step in environment
@@ -117,7 +120,7 @@ def main(data):
             #               print("action : ", action)
             #               print("start step -------")
             #        print("current index", i, "window", window, "max len ", max_len)
-                next_state, reward, done = env.get_next_state(state, action, data[i:window])
+                next_state, reward, done , i_dono = env.get_next_state(state, action, data[i:window])
             #               print("end step -------")
                 i = window
                 window = window + 7
@@ -131,7 +134,6 @@ def main(data):
                 state = next_state
             # stop training
                 if window > max_len:
-                    print(data[max_len:max_len])
                     done = True
                 #    print("end episode @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", e)
                 if done:
@@ -140,14 +142,23 @@ def main(data):
                     agent.update_target_model()
 
                 # adding +100K to reward because initially we subtracted 100K as a penalty
-
-                    rewards.append(reward + env.penalty)
+           #      state = (WMA, no_of_lb_stock, no_of_hb_stock, total_portfolio_amt, cash),
+                    do_nothing_reward = (state_dono[1] * data.Close_lb_stock[i_dono] + state_dono[2] * data.Close_hb_stock[i_dono] ) - state_dono[4]
+                    rewards.append(reward + reward * env.penalty)
+                    do_nothing_rewards.append(do_nothing_reward)
                     episodes.append(e)
 #                   print("plot graph")
-                    pylab.plot(episodes, rewards, 'b')
+                    #pylab.plot(episodes, rewards, 'b').title("Profit accross Epocs")
+                    sns.lineplot(x=episodes,y=rewards, dashes=False, ).set(title='Profit accross Epocs')
+                    sns.lineplot(x=episodes, y=do_nothing_rewards, dashes=False, ).set(title='Profit accross Epocs')
+                    plt.savefig("./save_graph/PO_dqn.png")
 #                   print("save graph")
-                    pylab.savefig("./save_graph/PO_dqn.png")
-                    print("episode:", e, "  profit:", reward, " cash:", env.total_cash, "  memory length:",
+                    #pylab.savefig("./save_graph/PO_dqn.png")
+                    #pylab.plot(episodes, do_nothing_rewards, 'b').title("Profit accross Epocs")
+            #                  print("save graph")
+                    #pylab.savefig("./save_graph/PO_dqn_dono.png")
+                    print("episode:", e, "  profit:", reward, " cash:", env.total_cash,
+                    "do nothing profit:", do_nothing_reward ,"memory length:",
                     len(agent.memory), "  epsilon:", agent.epsilon)
  #                  print("wrapup episode")
         # save the model
