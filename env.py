@@ -25,18 +25,18 @@ class POEnv:
     def initialize_hyperparameters(self):
 
             self.fees = 0.001  # per transaction fees
-            self.total_cash = 1000000 # profit
+            self.total_cash = 1000000 # cash
             self.penalty = 0.01
             return {self.total_cash, self.fees, self.penalty}
 
     def initialize_action_space(self):
 
         """ An action is represented by a tuple (buy_sell_percent).
-        Depending on the current state of the portfolio stock is represented by
-
+        Depending on the current state of the portfolio stock
         agent will select the most appropriate action which maximizes reward, buy or sell, high or low beta stock
-
-        at ∈[−0.25, −0.1, 0.05, 0, 0.05, 0.1, 0.25]
+        for simplicity we have chosen the below actions space with the % of stocks buy and sell
+        -ve % is sell and +ve is buy
+        at ∈ [−0.25, −0.1, 0.05, 0, 0.05, 0.1, 0.25]
         """
         self.action_space = [-0.25, -0.1, 0.05, 0, 0.05, 0.1, 0.25]
 
@@ -50,7 +50,7 @@ class POEnv:
         self.wma_hb_stock = 0
         self.no_of_lb_stock = 0
         self.no_of_hb_stock = 0
-        self.total_portfolio_amt = 1000000
+        self.total_portfolio_amt = self.total_cash
         self.state_space = [self.wma_lb_stock, self.wma_hb_stock, self.no_of_lb_stock, self.no_of_hb_stock, self.total_portfolio_amt, self.total_cash]
         return self.state_space
 
@@ -59,7 +59,7 @@ class POEnv:
     def set_init_state(self, data):
         """ Select the first date from which the portfolio will start.
         """
-       # state = (WMA, VPT, no_of_lb_stock, no_of_hb_stock, total_portfolio_amt, cash),
+       # state = (WMA, VPT, no_of_lb_stock, no_of_hb_stock, total_portfolio_amt, cash,),
         for i in range(len(data)):
              self.wma_lb_stock = self.wma_lb_stock + data.Close_lb_stock[i] * i
              self.wma_hb_stock = self.wma_hb_stock + data.Close_hb_stock[i] * i

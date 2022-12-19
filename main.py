@@ -86,20 +86,19 @@ def save_model_graph(self):
 
 def main(data):
     if __name__ == "__main__":
-        EPISODES = 1000
+        EPISODES = 100
 
-#get the env
-
+# get the env
         env = POEnv()
     # get size of state and action from environment
-        #state_size = env.state_space.shape[0]
+        # state_size = env.state_space.shape[0]
         state_size = len(env.state_space)
-        #action_size = env.action_space.n
+        # action_size = env.action_space.n
         action_size = len(env.action_space)
     #    print("State Size : " , state_size)
     #    print("Action Size : ", action_size)
         agent = DQNAgent(state_size, action_size)
-        rewards, episodes , do_nothing_rewards= [], [], []
+        rewards, episodes, do_nothing_rewards = [], [], []
         max_len = len(data)
         for e in range(EPISODES):
             done = False
