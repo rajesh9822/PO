@@ -24,10 +24,12 @@ class POEnv:
 
     def initialize_hyperparameters(self):
 
-            self.fees = 0.001  # per transaction fees
-            self.total_cash = 1000000 # cash
-            self.penalty = 0.01
-            return {self.total_cash, self.fees, self.penalty}
+        self.fees = 0.001  # per transaction fees
+        self.total_cash = 1000000 # cash
+        self.penalty = 0.01
+        self.period = 2
+        self.window = self.period
+        return {self.total_cash, self.fees, self.penalty, self.period, self.window}
 
     def initialize_action_space(self):
 
@@ -50,8 +52,11 @@ class POEnv:
         self.wma_hb_stock = 0
         self.no_of_lb_stock = 0
         self.no_of_hb_stock = 0
+
         self.total_portfolio_amt = self.total_cash
-        self.state_space = [self.wma_lb_stock, self.wma_hb_stock, self.no_of_lb_stock, self.no_of_hb_stock, self.total_portfolio_amt, self.total_cash]
+        self.state_space = [self.wma_lb_stock, self.wma_hb_stock,
+                            self.no_of_lb_stock, self.no_of_hb_stock,
+                            self.total_portfolio_amt, self.total_cash]
         return self.state_space
 
     ## Set / Reset initial portfolio state
@@ -59,26 +64,26 @@ class POEnv:
     def set_init_state(self, data):
         """ Select the first date from which the portfolio will start.
         """
-       # state = (WMA, VPT, no_of_lb_stock, no_of_hb_stock, total_portfolio_amt, cash,),
-        for i in range(len(data)):
-             self.wma_lb_stock = self.wma_lb_stock + data.Close_lb_stock[i] * i
-             self.wma_hb_stock = self.wma_hb_stock + data.Close_hb_stock[i] * i
+       # state = (WMA,no_of_lb_stock, no_of_hb_stock, total_portfolio_amt, cash,),
+        self.wma_lb_stock = 0
+        self.wma_hb_stock = 0
             # we will start with 50-50 allocation
 
 
-        self.no_of_lb_stock  = (self.total_portfolio_amt  * .5 )/ data.Close_lb_stock[i]
-        self.no_of_hb_stock = (self.total_portfolio_amt * .5) / data.Close_hb_stock[i]
+        self.no_of_lb_stock  = 0
+        self.no_of_hb_stock = 0
 
         self.state = [self.wma_lb_stock, self.wma_hb_stock, self.no_of_lb_stock, self.no_of_hb_stock, self.total_portfolio_amt, self.total_cash]
         return self.state
 
-    def get_wma(self, df):
+    def get_wma(self, df, period):
 
-        for i in range(len(df)):
-            self.wma_lb_stock = self.wma_lb_stock + df.Close_lb_stock[i] * i
-            self.wma_hb_stock = self.wma_hb_stock + df.Close_hb_stock[i] * i
+        for i in range(self.period_start, period_end, -1): # range(len(df)):
+            self.wma_lb_stock = self.wma_lb_stock + df.Close_lb_stock[i-1] * self.period_start
+            self.wma_hb_stock = self.wma_hb_stock + df.Close_hb_stock[i-1] * self.period_start
         #    print("data.Close_lb_stock[i] ", df.Close_lb_stock[i],i)
-            total_period = i + 1
+
+        total_period = period + period
         #print("total_period ", total_period)
         self.wma_lb_stock = self.wma_lb_stock/total_period
         self.wma_hb_stock = self.wma_hb_stock/total_period

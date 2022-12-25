@@ -54,7 +54,10 @@ def transform_data(data):
     df_hb = data.loc[data['Name'] == 'MS']
 
     df = df_lb.set_index('Date').join(df_hb.set_index('Date'), lsuffix='_lb_stock', rsuffix='_hb_stock')
+    df = df [['Name_lb_stock', 'Close_lb_stock','Name_hb_stock','Close_hb_stock']]
     print(df.columns)
+    pd.set_option('display.max_columns', None)
+    print(df.head())
     return df
 
 """
@@ -86,7 +89,7 @@ def save_model_graph(self):
 
 def main(data):
     if __name__ == "__main__":
-        EPISODES = 100
+        EPISODES = 2
 
 # get the env
         env = POEnv()
@@ -103,26 +106,24 @@ def main(data):
         for e in range(EPISODES):
             done = False
             reward = 0
-            state = env.set_init_state(data = data.head(1))
-            state_dono  = state
+            state = env.set_init_state(data= data.head(1))
+            state_dono = state
             state = np.reshape(state, [1, state_size])
-
 
         #    print("start episode -------", e)
             #           print("current_state :", state)
             # use 7 days window for histrical prices
-            window = 2
             i = 0
             while not done:
             # get action for the current state and go one step in environment
                 action = agent.get_action(state)
-            #               print("action : ", action)
+                print("action : ", action)
             #               print("start step -------")
-            #        print("current index", i, "window", window, "max len ", max_len)
-                next_state, reward, done , i_dono = env.get_next_state(state, action, data[i:window])
+                print("current index", i, "window", env.window, "max len ", max_len)
+                next_state, reward, done, i_dono = env.get_next_state(state, action, data[i:env.window])
             #               print("end step -------")
-                i = window
-                window = window + 7
+                i = env.window
+                env.window = + env.period
                 next_state = np.reshape(next_state, [1, state_size])
 
                 # save the sample <s, a, r, s'> to the replay memory
@@ -164,10 +165,13 @@ def main(data):
         if e % 50 == 0:
         # print("save model")
             agent.model.save_weights("./save_model/PO_dqn.h5")
-#Execute the program
+#make directories
 make_dir()
 #get the data
 data = load_data()
+#select the data
 data = transform_data(data)
-#do_eda(d)
-main(data)
+#create the datafrane
+#do_eda(data)
+#run the episodes
+#main(data)
