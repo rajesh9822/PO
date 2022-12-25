@@ -103,11 +103,11 @@ def main(data):
         agent = DQNAgent(state_size, action_size)
         rewards, episodes, do_nothing_rewards = [], [], []
         max_len = len(data)
+
         for e in range(EPISODES):
             done = False
             reward = 0
-            state = env.set_init_state(data= data.head(1))
-            state_dono = state
+            state = env.set_init_state(data=data.head(1))
             state = np.reshape(state, [1, state_size])
 
         #    print("start episode -------", e)
@@ -133,7 +133,7 @@ def main(data):
                 agent.train_model()
                 state = next_state
             # stop training
-                if window > max_len:
+                if env.window > max_len:
                     done = True
                 #    print("end episode @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", e)
                 if done:

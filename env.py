@@ -64,15 +64,22 @@ class POEnv:
     def set_init_state(self, data):
         """ Select the first date from which the portfolio will start.
         """
-       # state = (WMA,no_of_lb_stock, no_of_hb_stock, total_portfolio_amt, cash,),
-        self.wma_lb_stock = 0
-        self.wma_hb_stock = 0
-            # we will start with 50-50 allocation
+       # state =
+       # (wma_lb_stock,wma_lb_stock,no_of_lb_stock, no_of_hb_stock, total_portfolio_amt, cash,),
 
+        #wma would be the closing price initially
+        self.wma_lb_stock = data.Close_lb_stock
+        self.wma_hb_stock = data.Close_hb_stock
+        print("wma lb:", self.wma_lb_stock, "wma hb:", self.wma_hb_stock)
+       # We will start with 50-50 allocation
 
-        self.no_of_lb_stock  = 0
-        self.no_of_hb_stock = 0
+        self.no_of_lb_stock = 100
+        self.no_of_hb_stock = 100
 
+      # portfolio amt
+
+        self.total_portfolio_amt = data.Close_lb_stock * self.no_of_lb_stock + self.no_of_hb_stock * data.Close_hb_stock
+        print("total cash ", self.total_cash)
         self.state = [self.wma_lb_stock, self.wma_hb_stock, self.no_of_lb_stock, self.no_of_hb_stock, self.total_portfolio_amt, self.total_cash]
         return self.state
 
