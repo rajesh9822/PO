@@ -11,7 +11,7 @@ from keras.layers import Dense
 #from keras.optimizers import Adam
 from datetime import datetime
 from itertools import product
-
+from data import load_data, transform_data, do_eda
 
 class POEnv:
     def __init__(self):
@@ -25,7 +25,7 @@ class POEnv:
     def initialize_hyperparameters(self):
 
         self.fees = 0.001  # per transaction fees
-        self.total_cash = 1000000 # cash
+        self.total_cash = 1000 # cash
         self.penalty = 0.01
         self.period = 2
         self.window = self.period
@@ -61,40 +61,47 @@ class POEnv:
 
     ## Set / Reset initial portfolio state
 
-    def set_init_state(self, data):
+    def set_init_state(self,data):
         """ Select the first date from which the portfolio will start.
         """
        # state =
        # (wma_lb_stock,wma_lb_stock,no_of_lb_stock, no_of_hb_stock, total_portfolio_amt, cash,),
-
         #wma would be the closing price initially
-        self.wma_lb_stock = data.Close_lb_stock
-        self.wma_hb_stock = data.Close_hb_stock
-        print("wma lb:", self.wma_lb_stock, "wma hb:", self.wma_hb_stock)
+        self.wma_lb_stock = data.Close_lb_stock[0]
+        self.wma_hb_stock = data.Close_hb_stock[0]
+        print("intial wma lb:", self.wma_lb_stock, "intial wma hb:", self.wma_hb_stock)
        # We will start with 50-50 allocation
 
-        self.no_of_lb_stock = 100
-        self.no_of_hb_stock = 100
+        self.no_of_lb_stock = 10
+        self.no_of_hb_stock = 10
 
       # portfolio amt
 
-        self.total_portfolio_amt = data.Close_lb_stock * self.no_of_lb_stock + self.no_of_hb_stock * data.Close_hb_stock
+        self.total_portfolio_amt = data.Close_lb_stock[0] * self.no_of_lb_stock + data.Close_hb_stock[0] * self.no_of_hb_stock
         print("total cash ", self.total_cash)
         self.state = [self.wma_lb_stock, self.wma_hb_stock, self.no_of_lb_stock, self.no_of_hb_stock, self.total_portfolio_amt, self.total_cash]
         return self.state
 
-    def get_wma(self, df, period):
+    def get_wma(self, data):
+        """
+        WMA = ( P1 * W1 ) + (P2 *W2) + (P3 *W3) + (Pn * Wn) / (Wn + Wn-1 +…)
+        Where:
+        P1 = current price
+        P2 = Price one period ago
+        Wn = The period 2days of period stock history for both the HB and LB stock
+        # take 1 stock portfolio LB : CLX, HB: TSLA
+        """
 
-        for i in range(self.period_start, period_end, -1): # range(len(df)):
-            self.wma_lb_stock = self.wma_lb_stock + df.Close_lb_stock[i-1] * self.period_start
-            self.wma_hb_stock = self.wma_hb_stock + df.Close_hb_stock[i-1] * self.period_start
+        self.wma_lb_stock_temp =0
+        self.wma_hb_stock_temp=0
+        for i in range(len(data)): # range(len(df)):
+            self.wma_lb_stock_temp = self.wma_lb_stock_temp + data.Close_lb_stock[i] * (i+1)
+            self.wma_hb_stock_temp = data.Close_hb_stock[i] * (i+1)
         #    print("data.Close_lb_stock[i] ", df.Close_lb_stock[i],i)
 
-        total_period = period + period
-        #print("total_period ", total_period)
-        self.wma_lb_stock = self.wma_lb_stock/total_period
-        self.wma_hb_stock = self.wma_hb_stock/total_period
-        return self.wma_hb_stock, self.wma_lb_stock, i
+        self.wma_lb_stock = self.wma_lb_stock_temp /self.period
+        self.wma_lb_stock = self.wma_lb_stock_temp / self.period
+        return self.wma_hb_stock, self.wma_lb_stock
 
     def get_rewards(self, total_portfolio_amt_nxt, total_portfolio_amt_cur):
 
@@ -106,28 +113,27 @@ class POEnv:
 
         return self.reward
 
-    def get_next_state(self, state, action, df):
+    def get_next_state(self, state, action, data):
         #Calculate next state, reward and total ride time for a given
         #    state and action
         self.done = False
-
+        print("Window data", data)
         # calculate wma
-        self.wma_hb_stock , self.wma_lb_stock, self.i = self.get_wma(df)
+        self.wma_hb_stock , self.wma_lb_stock = self.get_wma(data)
 
-        # we will start with 50-50 allocation
-        #print("self.wma_lb_stock ", self.wma_lb_stock, i)
-        #print("self.wma_hb_stock ", self.wma_hb_stock, i)
+        print("self.wma_lb_stock ", self.wma_lb_stock)
+        print("self.wma_hb_stock ", self.wma_hb_stock)
         #print("Current State ", state)
         self.total_portfolio_amt_cur = state[0,4]
-        #print("total_portfolio_amt_cur", self.total_portfolio_amt_cur)
+        print("total_portfolio_amt_cur", self.total_portfolio_amt_cur)
         #Agent selects the action based on Epsilon strategy
 
         buy_sel_per = self.action_space[action]
 
-       # print("buy/sell % : ", buy_sel_per)
+        print("buy/sell % : ", buy_sel_per)
 
         if buy_sel_per < 0:
-            #sell lb and buy corresponding hb stock
+            # sell lb and buy corresponding hb stock
                     no_of_lb_stock_to_sell =  self.no_of_lb_stock * buy_sel_per
 
                     no_of_hb_stock_to_buy = self.no_of_hb_stock * buy_sel_per * -1
@@ -136,10 +142,12 @@ class POEnv:
                     self.no_of_lb_stock = self.no_of_lb_stock + no_of_lb_stock_to_sell
                     self.no_of_hb_stock = self.no_of_hb_stock + no_of_hb_stock_to_buy
 
-                    #calculate cost of buy and sale based on the action
-
-                    cost_of_lb_stock_to_sell = no_of_lb_stock_to_sell * df.Close_lb_stock[self.i] + self.fees * no_of_lb_stock_to_sell
-                    cost_of_hb_stock_to_buy  = no_of_hb_stock_to_buy * df.Close_hb_stock[self.i] + self.fees * no_of_hb_stock_to_buy
+            # calculate cost of buy and sale based on the action
+                    print("Period :", self.period)
+                    cost_of_lb_stock_to_sell = no_of_lb_stock_to_sell * data.Close_lb_stock[self.period - 1] \
+                                               + self.fees * no_of_lb_stock_to_sell
+                    cost_of_hb_stock_to_buy = no_of_hb_stock_to_buy * data.Close_hb_stock[self.period - 1] \
+                                               + self.fees * no_of_hb_stock_to_buy
 
 
                     self.total_cash = self.total_cash + (abs(cost_of_lb_stock_to_sell) - abs(cost_of_hb_stock_to_buy))
@@ -155,27 +163,30 @@ class POEnv:
                     self.no_of_hb_stock = self.no_of_hb_stock + no_of_hb_stock_to_sell
 
                     # calculate cost of buy and sale based on the action
-                    cost_of_lb_stock_to_buy = no_of_lb_stock_to_buy * df.Close_lb_stock[self.i] + self.fees * no_of_lb_stock_to_buy
-                    cost_of_hb_stock_to_sell = no_of_hb_stock_to_sell * df.Close_hb_stock[self.i] + self.fees * no_of_hb_stock_to_sell
+                    cost_of_lb_stock_to_buy = no_of_lb_stock_to_buy * data.Close_lb_stock[self.period - 1] \
+                                              + self.fees * no_of_lb_stock_to_buy
+                    cost_of_hb_stock_to_sell = no_of_hb_stock_to_sell * data.Close_hb_stock[self.period - 1] \
+                                              + self.fees * no_of_hb_stock_to_sell
 
                     self.total_cash = self.total_cash + (abs(cost_of_hb_stock_to_sell) - abs(cost_of_lb_stock_to_buy))
 
 
 
-        self.total_portfolio_amt_nxt = self.no_of_lb_stock * df.Close_lb_stock[self.i] + self.no_of_hb_stock * df.Close_hb_stock[self.i]
-        #print("data.Close_lb_stock[i]", df.Close_lb_stock[i])
+        self.total_portfolio_amt_nxt = self.no_of_lb_stock * data.Close_lb_stock[self.period -1] + \
+                                       self.no_of_hb_stock * data.Close_hb_stock[self.period -1]
+        print("Closing price at time t", data.Close_lb_stock[self.period -1 ])
         #print("data.Close_hb_stock[i]", df.Close_hb_stock[i])
- #       print("self.total_portfolio_amt_nxt", self.total_portfolio_amt_nxt)
- #       print("self.total_cash", self.total_cash)
+        print("self.total_portfolio_amt_nxt", self.total_portfolio_amt_nxt)
+        print("self.total_cash", self.total_cash)
 
         self.next_state = [self.wma_lb_stock, self.wma_hb_stock, self.no_of_lb_stock, self.no_of_hb_stock,
                                       self.total_portfolio_amt_nxt, self.total_cash]
- #       print("next State : ", self.next_state)
+        print("next State : ", self.next_state)
 
         #self.reward = self.total_portfolio_amt_nxt - self.total_portfolio_amt_cur - self.penalty
         self.reward = self.get_rewards(self.total_portfolio_amt_nxt, self.total_portfolio_amt_cur)
        # self.total_portfolio_amt_cur = self.total_portfolio_amt_nxt
- #       print("self.reward", self.reward)
+       # print("self.reward", self.reward)
         if self.total_cash < 0:
             self.done = True
-        return self.next_state, self.reward, self.done, self.i
+        return self.next_state, self.reward, self.done
