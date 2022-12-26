@@ -40,7 +40,7 @@ def save_model_graph(self):
 
 def main(data):
     if __name__ == "__main__":
-        EPISODES = 10
+        EPISODES = 100
 
 # get the env
         env = POEnv()
@@ -63,19 +63,20 @@ def main(data):
 
             print("start episode -------", e)
             print("current_state :", state)
-            # use 7 days window for histrical prices
+            # use 7 days window for historical prices
             i = 0
+            window = env.period
             while not done:
             # get action for the current state and go one step in environment
                 action = agent.get_action(state)
                 print("action : ", action)
             #               print("start step -------")
-                print("current index", i, "window", env.window, "max len ", max_len)
-                next_state, reward, done = env.get_next_state(state, action, data[i:env.window])
+                print("current index", i, "window", window, "max len ", max_len)
+                next_state, reward, done = env.get_next_state(state, action, data[i:window])
             #               print("end step -------")
-                i = env.window
+                i = window
                 print("period:", env.period)
-                env.window = env.window + env.period
+                window = window + env.period
                 next_state = np.reshape(next_state, [1, state_size])
 
                 # save the sample <s, a, r, s'> to the replay memory
@@ -85,7 +86,7 @@ def main(data):
                 agent.train_model()
                 state = next_state
             # stop training
-                if env.window > max_len:
+                if window > max_len:
                     done = True
                 #print("end episode @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", e)
                 if done:

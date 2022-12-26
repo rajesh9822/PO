@@ -1,35 +1,19 @@
-import numpy as np
-import math
-import random
-import collections
-from collections import deque
-# for building the DQN model
-import pandas as pd
-from keras import layers
-from keras import Sequential
-from keras.layers import Dense
-#from keras.optimizers import Adam
-from datetime import datetime
-from itertools import product
-from data import load_data, transform_data, do_eda
+
 
 class POEnv:
     def __init__(self):
         self.hyperparameters = self.initialize_hyperparameters()
         self.action_space = self.initialize_action_space()
         self.state_space = self.initialize_state_space()
-        #self.state_init = self.set_init_state(data)
-        #self.reset_state()
 
 
     def initialize_hyperparameters(self):
 
         self.fees = 0.001  # per transaction fees
-        self.total_cash = 1000 # cash
+        self.total_cash = 100000 # cash
         self.penalty = 0.01
         self.period = 2
-        self.window = self.period
-        return {self.total_cash, self.fees, self.penalty, self.period, self.window}
+        return {self.total_cash, self.fees, self.penalty, self.period}
 
     def initialize_action_space(self):
 
@@ -64,12 +48,16 @@ class POEnv:
     def set_init_state(self,data):
         """ Select the first date from which the portfolio will start.
         """
+
+        self.hyperparameters = self.initialize_hyperparameters()
+        self.state_space = self.initialize_state_space()
        # state =
        # (wma_lb_stock,wma_lb_stock,no_of_lb_stock, no_of_hb_stock, total_portfolio_amt, cash,),
         #wma would be the closing price initially
         self.wma_lb_stock = data.Close_lb_stock[0]
         self.wma_hb_stock = data.Close_hb_stock[0]
-        print("intial wma lb:", self.wma_lb_stock, "intial wma hb:", self.wma_hb_stock)
+        print("initial wma lb:", self.wma_lb_stock, "initial wma hb:", self.wma_hb_stock)
+
        # We will start with 50-50 allocation
 
         self.no_of_lb_stock = 10
