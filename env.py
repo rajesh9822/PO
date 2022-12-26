@@ -90,6 +90,7 @@ class POEnv:
         P2 = Price one period ago
         Wn = The period 2days of period stock history for both the HB and LB stock
         # take 1 stock portfolio LB : CLX, HB: TSLA
+
         """
 
         self.wma_lb_stock_temp =0

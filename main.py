@@ -87,7 +87,7 @@ def main(data):
             # stop training
                 if env.window > max_len:
                     done = True
-                #    print("end episode @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", e)
+                #print("end episode @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", e)
                 if done:
             #  every episode update the target model to be same with model
             #  print("update target model")
